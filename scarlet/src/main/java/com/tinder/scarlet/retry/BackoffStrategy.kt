@@ -12,4 +12,6 @@ interface BackoffStrategy {
      * Returns a duration in milliseconds.
      */
     fun backoffDurationMillisAt(retryCount: Int): Long
+
+    var shouldBackoff: Boolean
 }

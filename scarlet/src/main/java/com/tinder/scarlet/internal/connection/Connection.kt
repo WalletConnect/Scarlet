@@ -106,15 +106,19 @@ internal class Connection(
                     transitionTo(Connected(session = session))
                 }
                 on<OnWebSocket.Terminate>() {
-                    val backoffDuration = backoffStrategy.backoffDurationMillisAt(retryCount)
-                    val timerDisposable = scheduleRetry(backoffDuration)
-                    transitionTo(
-                        WaitingToRetry(
-                            timerDisposable = timerDisposable,
-                            retryCount = retryCount,
-                            retryInMillis = backoffDuration
+                    if (backoffStrategy.shouldBackoff) {
+                        val backoffDuration = backoffStrategy.backoffDurationMillisAt(retryCount)
+                        val timerDisposable = scheduleRetry(backoffDuration)
+                        transitionTo(
+                            WaitingToRetry(
+                                timerDisposable = timerDisposable,
+                                retryCount = retryCount,
+                                retryInMillis = backoffDuration
+                            )
                         )
-                    )
+                    } else {
+                        transitionTo(Disconnected)
+                    }
                 }
             }
             state<Connected> {
@@ -135,15 +139,19 @@ internal class Connection(
                     transitionTo(Destroyed)
                 }
                 on<OnWebSocket.Terminate>() {
-                    val backoffDuration = backoffStrategy.backoffDurationMillisAt(0)
-                    val timerDisposable = scheduleRetry(backoffDuration)
-                    transitionTo(
-                        WaitingToRetry(
-                            timerDisposable = timerDisposable,
-                            retryCount = 0,
-                            retryInMillis = backoffDuration
+                    if (backoffStrategy.shouldBackoff) {
+                        val backoffDuration = backoffStrategy.backoffDurationMillisAt(0)
+                        val timerDisposable = scheduleRetry(backoffDuration)
+                        transitionTo(
+                            WaitingToRetry(
+                                timerDisposable = timerDisposable,
+                                retryCount = 0,
+                                retryInMillis = backoffDuration
+                            )
                         )
-                    )
+                    } else {
+                        transitionTo(Disconnected)
+                    }
                 }
             }
             state<Disconnecting> {
